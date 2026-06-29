@@ -12,10 +12,18 @@ name: Outrider
 # this repo — no PAT required since the action runs in the target.
 
 on:
-  schedule:
-    # Daily at 14:00 UTC
-    - cron: '0 14 * * *'
+  # schedule:
+  #   - cron: '0 14 * * *'  # disabled — manual dispatch only
   workflow_dispatch:
+    inputs:
+      pin-method:
+        description: 'Method/technique query or arxiv_id to implement directly. Bypasses selection.'
+        required: false
+        default: ''
+      pin-arxiv:
+        description: 'Pinned arxiv_id (must already be in the candidate pool).'
+        required: false
+        default: ''
 
 jobs:
   recommend:
@@ -44,6 +52,8 @@ jobs:
       - uses: remyxai/outrider@v1
         with:
           interest-id: e2c957ba-e71d-4c39-8a87-421e2aab5b45
+          pin-method: ${{ inputs.pin-method }}
+          pin-arxiv: ${{ inputs.pin-arxiv }}
           # remyx[bot] token (empty → action falls back to GITHUB_TOKEN).
           github-token: ${{ steps.remyx-bot.outputs.token }}
           # Disable the per-repo rate-limit window so manual and scheduled
