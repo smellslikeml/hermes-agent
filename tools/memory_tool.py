@@ -778,6 +778,16 @@ def _apply_write_gate(action: str, target: str, content: Optional[str],
     if action not in {"add", "replace", "remove"}:
         return None
 
+    # EDV Verify stage: independently vet experiences the background-review fork
+    # distills before they reach the store (no-op for foreground writes).
+    try:
+        from tools.experience_verification import verify_memory_write
+        rejected = verify_memory_write(action, target, content)
+        if rejected is not None:
+            return rejected
+    except Exception:
+        pass
+
     try:
         from tools import write_approval as wa
     except Exception:
@@ -831,6 +841,16 @@ def _apply_batch_write_gate(target: str, operations: List[Dict[str, Any]]) -> Op
     (blocked or staged), or None when the caller should perform the real
     batch write. The whole batch is gated as a single unit.
     """
+    # EDV Verify stage: vet every distilled op before the atomic batch lands
+    # (background-review writes only; foreground passes straight through).
+    try:
+        from tools.experience_verification import verify_memory_write
+        rejected = verify_memory_write("batch", target, None, operations=operations)
+        if rejected is not None:
+            return rejected
+    except Exception:
+        pass
+
     try:
         from tools import write_approval as wa
     except Exception:
